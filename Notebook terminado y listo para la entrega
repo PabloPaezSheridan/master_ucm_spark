@@ -1,0 +1,794 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/PabloPaezSheridan/master_ucm_spark/blob/main/Notebook%20terminado%20y%20listo%20para%20la%20entrega\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "7f949b17b8f2814baa87c674deefe4d3",
+          "grade": false,
+          "grade_id": "cell-f8987996be9f1238",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "WA7uTZsPmVnK"
+      },
+      "source": [
+        "# La organización Kiva de préstamos entre particulares\n",
+        "\n",
+        "### Disponible en Kaggle en:\n",
+        "https://www.kaggle.com/kiva/data-science-for-good-kiva-crowdfunding/version/5\n",
+        "\n",
+        "El conjunto de datos elegido recoge estadísticas de Kiva entre 2014 y 2017. Kiva abre un nuevo mundo de oportunidades para los menos favorecidos y nos permite a cualquiera de nosotros convertirnos en superhéroes. Se trata de una organización sin ánimo de lucro que ofrece pequeños préstamos para ayudar a las comunidades desatendidas que no tienen acceso a los servicios bancarios normales. Proporciona una plataforma y une a personas que estén dispuestas a prestar, un mínimo de 25 dólares, y prestatarios que expongan sus necesidades, la finalidad del dinero y las condiciones de devolución,  porque no es una donación, es un préstamo.\n",
+        "\n",
+        "Al crear este servicio, Kiva habilita una solución que desbloquea capital para todos y mantiene un interés financiero muy bajo para los prestatarios. Por otro lado, permite que cualquiera sea parte de la solución y brinda a las personas un amplio abanico de opciones para elegir quién, dónde, cuánto y para qué sector desea ayudar."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "9a6b4dc108ddf890c659e33701965428",
+          "grade": false,
+          "grade_id": "cell-f74d7bfd01811789",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "DrbOVqnxmVnM"
+      },
+      "source": [
+        "### Variables y significado"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "ea569f4edabc5d7306f8ee2b35adc403",
+          "grade": false,
+          "grade_id": "cell-9cfb34982bd4eb04",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "yO0uR7q0mVnM"
+      },
+      "source": [
+        "Las variables utilizadas para describir cada préstamo son:\n",
+        "\n",
+        "\n",
+        "* id: ID único para préstamo\n",
+        "* funding_amount: la cantidad desembolsada por Kiva al agente de campo (USD)\n",
+        "* loan_amount: la cantidad desembolsada por el agente de campo al prestatario (USD)\n",
+        "* country_code: código ISO del país en el que se desembolsó el préstamo\n",
+        "* activity: Categoría más granular\n",
+        "* sector: Categoría de alto nivel\n",
+        "* use: Uso exacto del monto del préstamo\n",
+        "* country: Nombre completo del país en el que se desembolsó el préstamo\n",
+        "* region: Nombre completo de la región dentro del país\n",
+        "* currency: La moneda en que se desembolsó el préstamo\n",
+        "* partner_id: ID de la organización asociada\n",
+        "* posted_time: Hora a la que el agente de campo (intermediario) publica el préstamo en Kiva\n",
+        "* disbursed_time: Hora en que el agente de campo (intermediario) entrega el préstamo al beneficiario\n",
+        "* funded_time: El momento en que el préstamo publicado en Kiva es financiado por los prestamistas por completo\n",
+        "* term_in_months: La duración por la cual el préstamo se desembolsó en meses\n",
+        "* lender_count: El número total de prestamistas que contribuyeron a este préstamo.\n",
+        "* tags: Etiquetas para describir el caso específico\n",
+        "* borrower_genders: letras M, F separadas por comas, donde cada instancia representa un solo hombre / mujer en el grupo\n",
+        "* repayment_interval: Estado de pago\n",
+        "* date: fecha en la base de datos de esta operación."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "86JIQ48YmVnM"
+      },
+      "source": [
+        "**Nombre completo del alumno:**  "
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "3821f9090a3fe8312fb5f67097a7a9d2",
+          "grade": false,
+          "grade_id": "cell-b4f9c37a2b92d2e6",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "T7FOPJXcmVnN"
+      },
+      "source": [
+        "# INSTRUCCIONES\n",
+        "\n",
+        "En cada celda debes responder a la pregunta formulada, asegurándote de que el resultado queda guardado en la(s) variable(s) que por defecto vienen inicializadas a `None`. No se necesita usar variables intermedias, pero puedes hacerlo siempre que el resultado final del cálculo quede guardado exactamente en la variable que venía inicializada a None (debes reemplazar None por la secuencia de transformaciones necesarias, pero nunca cambiar el nombre de esa variable).\n",
+        "\n",
+        "**No olvides borrar la línea *raise NotImplementedError()* de cada celda cuando hayas completado la solución de esa celda y quieras probarla**.\n",
+        "\n",
+        "Después de cada celda evaluable verás una celda con código. Ejecútala (no modifiques su código) y te dirá si tu solución es correcta o no. En caso de ser correcta, se ejecutará correctamente y no mostrará nada, pero si no lo es mostrará un error. Además de esas pruebas, se realizarán algunas más (ocultas) a la hora de puntuar el ejercicio, pero evaluar dicha celda es un indicador bastante fiable acerca de si realmente has implementado la solución correcta o no. Asegúrate de que, al menos, todas las celdas indican que el código es correcto antes de enviar el notebook terminado.\n",
+        "\n",
+        "**Nunca se debe redondear ninguna cantidad si no lo pide explícitamente el enunciado**\n",
+        "\n",
+        "### Cada solución debe escribirse obligatoriamente en la celda habilitada para ello. Cualquier celda adicional que se haya creado durante el desarrollo deberá ser eliminada.\n",
+        "\n",
+        "Si necesitas crear celdas auxiliares durante el desarrollo, puedes hacerlo pero debes asegurarte de borrarlas antes de entregar el notebook."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "9d51114ba5e01cc1f49401e7ec3fec2e",
+          "grade": false,
+          "grade_id": "cell-69ec0993eeaff3ac",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "S1WljWT-mVnN"
+      },
+      "source": [
+        "### Sobre el dataset kiva_loans.csv se pide:"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "GI0jJRczmVnN"
+      },
+      "source": [
+        "**(1 punto)** Ejercicio 1\n",
+        "\n",
+        "* Leerlo **sin intentar** que Spark infiera el tipo de dato de cada columna\n",
+        "* Puesto que existen columnas que contienen una coma enmedio del valor, en esos casos los valores vienen entre comillas dobles. Spark ya contempla esta posibilidad y puede leerlas adecuadamente **si al leer le indicamos las siguientes opciones adicionales** además de las que ya sueles usar: `.option(\"quote\", \"\\\"\").option(\"escape\", \"\\\"\")`.\n",
+        "* Asegúrate de que las **filas que no tienen el formato correcto sean descartadas**, indicando también la opción `mode` con el valor `DROPMALFORMED` como vimos en clase.\n",
+        "* Crear un nuevo DF `kivaRawNoNullDF` en el que se hayan eliminado todas las filas que tengan algún valor nulo en cualquier columna **excepto en la columna tags**, que no será relevante para el análisis y por tanto podemos ignorar sus valores nulos y mantener dichas filas."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 22,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "5dd7b5af2400b59ee2155e84fbd2bc1b",
+          "grade": false,
+          "grade_id": "read_csv",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "x7aDGQTMmVnO",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "4ab76497-d2b9-4fab-e203-655302c8b736"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "+------+-------------+-----------+--------------------+--------------+--------------------+------------+--------+------------+--------+----------+--------------------+--------------------+--------------------+--------------+------------+--------------------+--------------------+------------------+----------+\n",
+            "|    id|funded_amount|loan_amount|            activity|        sector|                 use|country_code| country|      region|currency|partner_id|         posted_time|      disbursed_time|         funded_time|term_in_months|lender_count|                tags|    borrower_genders|repayment_interval|      date|\n",
+            "+------+-------------+-----------+--------------------+--------------+--------------------+------------+--------+------------+--------+----------+--------------------+--------------------+--------------------+--------------+------------+--------------------+--------------------+------------------+----------+\n",
+            "|653051|        300.0|      300.0| Fruits & Vegetables|          Food|To buy seasonal, ...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:12:...|2013-12-17 08:00:...|2014-01-02 10:06:...|          12.0|          12|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653053|        575.0|      575.0|            Rickshaw|Transportation|to repair and mai...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:51:...|2013-12-17 08:00:...|2014-01-02 09:17:...|          11.0|          14|                NULL|      female, female|         irregular|2014-01-01|\n",
+            "|653068|        150.0|      150.0|      Transportation|Transportation|To repair their o...|          IN|   India|   Maynaguri|     INR|     334.0|2014-01-01 09:58:...|2013-12-17 08:00:...|2014-01-01 16:01:...|          43.0|           6|user_favorite, us...|              female|            bullet|2014-01-01|\n",
+            "|653063|        200.0|      200.0|          Embroidery|          Arts|to purchase an em...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 08:03:...|2013-12-24 08:00:...|2014-01-01 13:00:...|          11.0|           8|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653084|        400.0|      400.0|          Milk Sales|          Food|to purchase one b...|          PK|Pakistan|Abdul Hakeem|     PKR|     245.0|2014-01-01 11:53:...|2013-12-17 08:00:...|2014-01-01 19:18:...|          14.0|          16|                NULL|              female|           monthly|2014-01-01|\n",
+            "|653067|        200.0|      200.0|               Dairy|   Agriculture|To purchase a dai...|          IN|   India|   Maynaguri|     INR|     334.0|2014-01-01 09:51:...|2013-12-16 08:00:...|2014-01-01 17:18:...|          43.0|           8|user_favorite, us...|              female|            bullet|2014-01-01|\n",
+            "|653078|        400.0|      400.0|        Beauty Salon|      Services|to buy more hair ...|          PK|Pakistan|   Ellahabad|     PKR|     245.0|2014-01-01 11:46:...|2013-12-20 08:00:...|2014-01-10 18:18:...|          14.0|           8|#Elderly, #Woman ...|              female|           monthly|2014-01-01|\n",
+            "|653082|        475.0|      475.0|       Manufacturing| Manufacturing|to purchase leath...|          PK|Pakistan|      Lahore|     PKR|     245.0|2014-01-01 11:49:...|2013-12-20 08:00:...|2014-01-01 18:47:...|          14.0|          19|       user_favorite|              female|           monthly|2014-01-01|\n",
+            "|653048|        625.0|      625.0|Food Production/S...|          Food|to buy a stall, g...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 05:41:...|2013-12-17 08:00:...|2014-01-03 15:45:...|          11.0|          24|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653060|        200.0|      200.0|            Rickshaw|Transportation|to cover the cost...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 07:32:...|2013-12-24 08:00:...|2014-01-01 12:18:...|          11.0|           3|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653088|        400.0|      400.0|           Wholesale|     Wholesale|to purchase biscu...|          PK|Pakistan|  Faisalabad|     PKR|     245.0|2014-01-01 12:03:...|2013-12-16 08:00:...|2014-01-03 09:19:...|          14.0|          16|                NULL|              female|           monthly|2014-01-01|\n",
+            "|653089|        400.0|      400.0|       General Store|        Retail|to buy stock of r...|          PK|Pakistan|  Faisalabad|     PKR|     245.0|2014-01-01 12:04:...|2013-12-24 08:00:...|2014-01-08 00:35:...|          14.0|          16|#Repeat Borrower,...|              female|           monthly|2014-01-01|\n",
+            "|653062|        400.0|      400.0|      Clothing Sales|      Clothing|to purchase varie...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 07:57:...|2013-12-24 08:00:...|2014-01-02 15:47:...|          12.0|          10|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653075|        225.0|      225.0|             Poultry|   Agriculture|to expand her exi...|          IN|   India|    Dhupguri|     INR|     334.0|2014-01-01 11:24:...|2013-12-20 08:00:...|2014-01-01 18:58:...|          43.0|           7|       user_favorite|              female|            bullet|2014-01-01|\n",
+            "|653054|        300.0|      300.0|            Rickshaw|Transportation|to buy a three-wh...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:58:...|2013-12-17 08:00:...|2014-01-02 00:04:...|          11.0|           9|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653091|        400.0|      400.0|       General Store|        Retail|to buy packs of s...|          PK|Pakistan|  Faisalabad|     PKR|     245.0|2014-01-01 12:09:...|2013-12-09 08:00:...|2014-01-14 15:57:...|          14.0|          11|#Woman Owned Biz,...|              female|           monthly|2014-01-01|\n",
+            "|653052|        875.0|      875.0|           Tailoring|      Services|To buy a sewing m...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:25:...|2013-12-17 08:00:...|2014-01-01 18:07:...|          11.0|          25|                NULL|female, female, f...|         irregular|2014-01-01|\n",
+            "|653066|        250.0|      250.0|              Sewing|      Services|to purchase a sew...|          IN|   India|   Maynaguri|     INR|     334.0|2014-01-01 09:48:...|2013-12-13 08:00:...|2014-01-01 17:18:...|          43.0|           4|user_favorite, us...|              female|            bullet|2014-01-01|\n",
+            "|653080|        475.0|      475.0|        Beauty Salon|      Services|to buy more cosme...|          PK|Pakistan|      Lahore|     PKR|     245.0|2014-01-01 11:48:...|2013-12-19 08:00:...|2014-01-10 03:22:...|          14.0|          18|    #Woman Owned Biz|              female|           monthly|2014-01-01|\n",
+            "|653065|        250.0|      250.0|              Bakery|          Food|to buy ingredient...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 08:26:...|2013-12-18 08:00:...|2014-01-01 15:35:...|          11.0|          10|                NULL|              female|         irregular|2014-01-01|\n",
+            "+------+-------------+-----------+--------------------+--------------+--------------------+------------+--------+------------+--------+----------+--------------------+--------------------+--------------------+--------------+------------+--------------------+--------------------+------------------+----------+\n",
+            "only showing top 20 rows\n",
+            "\n"
+          ]
+        }
+      ],
+      "source": [
+        "# LÍNEA EVALUABLE, NO RENOMBRAR LAS VARIABLES\n",
+        "\n",
+        "# Seccion para conectar al adls\n",
+        "api_key = \"\"\n",
+        "storage_account_name = \"masterucmdata\"\n",
+        "container_name = \"sparktask\"\n",
+        "\n",
+        "from pyspark.sql import SparkSession\n",
+        "spark = SparkSession.builder.appName(\"KivaData\") \\\n",
+        "    .config(f\"fs.azure.account.key.{storage_account_name}.dfs.core.windows.net\", api_key) \\\n",
+        "    .config(\"spark.jars.packages\", \"org.apache.hadoop:hadoop-azure:3.3.1\") \\\n",
+        "    .getOrCreate()\n",
+        "\n",
+        "adls_path_to_csv = f\"abfss://{container_name}@{storage_account_name}.dfs.core.windows.net/data/kiva_loans.csv\"\n",
+        "# find de la seccion para conectar al adsl\n",
+        "\n",
+        "kivaRawDF = spark.read.option(\"header\", True)\\\n",
+        "    .option(\"inferSchema\", False)\\\n",
+        "    .option(\"quote\", \"\\\"\")\\\n",
+        "    .option(\"escape\", \"\\\"\")\\\n",
+        "    .option(\"mode\", \"DROPMALFORMED\")\\\n",
+        "    .csv(adls_path_to_csv)\n",
+        "\n",
+        "# Descomentar estas líneas para calcular la lista de columnas que sí deben tenerse en cuenta para quitar nulos. Después\n",
+        "# tendrás que utilizar dicha lista en la operación que elimina los nulos\n",
+        "columnasExceptoTags = kivaRawDF.columns\n",
+        "columnasExceptoTags.remove(\"tags\")\n",
+        "kivaRawNoNullDF = None\n",
+        "# YOUR CODE HERE\n",
+        "kivaRawNoNullDF = kivaRawDF.na.drop(subset=columnasExceptoTags)\n",
+        "kivaRawNoNullDF.show()"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 23,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "188c34c4f8b30b2afe579969e84c4636",
+          "grade": true,
+          "grade_id": "read_csv_test",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "Gk-TozGXmVnO"
+      },
+      "outputs": [],
+      "source": [
+        "from pyspark.sql.types import DoubleType\n",
+        "assert(kivaRawNoNullDF.count() == 574115)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "2f4645aff4a4c236ce8ea3c628630e46",
+          "grade": false,
+          "grade_id": "cell-b90f5b934eda250e",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "cvVxWEdMmVnP"
+      },
+      "source": [
+        "**(1 punto)** Ejercicio 2\n",
+        "\n",
+        "* Las columnas `posted_time`, `disbursed_time` y `funded_time` son en realidad instantes de tiempo que Spark debería procesar como timestamp. Partiendo de `kivaRawNoNullDF`, reemplaza **ambas columnas** por su versión convertida a timestamp, utilizando `withColumn` con el mismo nombre de cada columna, y donde el nuevo valor de la columna viene dado por el siguiente código:\n",
+        "\n",
+        "        F.from_unixtime(F.unix_timestamp('nombreColumna', 'yyyy-MM-dd HH:mm:ssXXX')).cast(\"timestamp\"))\n",
+        "\n",
+        "* Además, convierte a `DoubleType` la columna `loan_amount` y a `IntegerType` la columna `term_in_months`.\n",
+        "\n",
+        "* El DF resultante de todas estas operaciones debe quedar almacenado en la variable `kivaDF`, **cacheado**.\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 24,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "ca99506697f9a967d82bac2f35307d4d",
+          "grade": false,
+          "grade_id": "convert_timestamp",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "oKiYwwnqmVnP",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "42ba77a3-5e55-4726-b4f9-1c0692c37f86"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "+------+-------------+-----------+--------------------+--------------+--------------------+------------+--------+------------+--------+----------+-------------------+-------------------+-------------------+--------------+------------+--------------------+--------------------+------------------+----------+\n",
+            "|    id|funded_amount|loan_amount|            activity|        sector|                 use|country_code| country|      region|currency|partner_id|        posted_time|     disbursed_time|        funded_time|term_in_months|lender_count|                tags|    borrower_genders|repayment_interval|      date|\n",
+            "+------+-------------+-----------+--------------------+--------------+--------------------+------------+--------+------------+--------+----------+-------------------+-------------------+-------------------+--------------+------------+--------------------+--------------------+------------------+----------+\n",
+            "|653051|        300.0|      300.0| Fruits & Vegetables|          Food|To buy seasonal, ...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:12:39|2013-12-17 08:00:00|2014-01-02 10:06:32|            12|          12|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653053|        575.0|      575.0|            Rickshaw|Transportation|to repair and mai...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:51:08|2013-12-17 08:00:00|2014-01-02 09:17:23|            11|          14|                NULL|      female, female|         irregular|2014-01-01|\n",
+            "|653068|        150.0|      150.0|      Transportation|Transportation|To repair their o...|          IN|   India|   Maynaguri|     INR|     334.0|2014-01-01 09:58:07|2013-12-17 08:00:00|2014-01-01 16:01:36|            43|           6|user_favorite, us...|              female|            bullet|2014-01-01|\n",
+            "|653063|        200.0|      200.0|          Embroidery|          Arts|to purchase an em...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 08:03:11|2013-12-24 08:00:00|2014-01-01 13:00:00|            11|           8|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653084|        400.0|      400.0|          Milk Sales|          Food|to purchase one b...|          PK|Pakistan|Abdul Hakeem|     PKR|     245.0|2014-01-01 11:53:19|2013-12-17 08:00:00|2014-01-01 19:18:51|            14|          16|                NULL|              female|           monthly|2014-01-01|\n",
+            "|653067|        200.0|      200.0|               Dairy|   Agriculture|To purchase a dai...|          IN|   India|   Maynaguri|     INR|     334.0|2014-01-01 09:51:02|2013-12-16 08:00:00|2014-01-01 17:18:09|            43|           8|user_favorite, us...|              female|            bullet|2014-01-01|\n",
+            "|653078|        400.0|      400.0|        Beauty Salon|      Services|to buy more hair ...|          PK|Pakistan|   Ellahabad|     PKR|     245.0|2014-01-01 11:46:01|2013-12-20 08:00:00|2014-01-10 18:18:44|            14|           8|#Elderly, #Woman ...|              female|           monthly|2014-01-01|\n",
+            "|653082|        475.0|      475.0|       Manufacturing| Manufacturing|to purchase leath...|          PK|Pakistan|      Lahore|     PKR|     245.0|2014-01-01 11:49:43|2013-12-20 08:00:00|2014-01-01 18:47:21|            14|          19|       user_favorite|              female|           monthly|2014-01-01|\n",
+            "|653048|        625.0|      625.0|Food Production/S...|          Food|to buy a stall, g...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 05:41:03|2013-12-17 08:00:00|2014-01-03 15:45:04|            11|          24|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653060|        200.0|      200.0|            Rickshaw|Transportation|to cover the cost...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 07:32:39|2013-12-24 08:00:00|2014-01-01 12:18:55|            11|           3|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653088|        400.0|      400.0|           Wholesale|     Wholesale|to purchase biscu...|          PK|Pakistan|  Faisalabad|     PKR|     245.0|2014-01-01 12:03:43|2013-12-16 08:00:00|2014-01-03 09:19:26|            14|          16|                NULL|              female|           monthly|2014-01-01|\n",
+            "|653089|        400.0|      400.0|       General Store|        Retail|to buy stock of r...|          PK|Pakistan|  Faisalabad|     PKR|     245.0|2014-01-01 12:04:57|2013-12-24 08:00:00|2014-01-08 00:35:14|            14|          16|#Repeat Borrower,...|              female|           monthly|2014-01-01|\n",
+            "|653062|        400.0|      400.0|      Clothing Sales|      Clothing|to purchase varie...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 07:57:58|2013-12-24 08:00:00|2014-01-02 15:47:37|            12|          10|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653075|        225.0|      225.0|             Poultry|   Agriculture|to expand her exi...|          IN|   India|    Dhupguri|     INR|     334.0|2014-01-01 11:24:40|2013-12-20 08:00:00|2014-01-01 18:58:18|            43|           7|       user_favorite|              female|            bullet|2014-01-01|\n",
+            "|653054|        300.0|      300.0|            Rickshaw|Transportation|to buy a three-wh...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:58:07|2013-12-17 08:00:00|2014-01-02 00:04:08|            11|           9|                NULL|              female|         irregular|2014-01-01|\n",
+            "|653091|        400.0|      400.0|       General Store|        Retail|to buy packs of s...|          PK|Pakistan|  Faisalabad|     PKR|     245.0|2014-01-01 12:09:10|2013-12-09 08:00:00|2014-01-14 15:57:05|            14|          11|#Woman Owned Biz,...|              female|           monthly|2014-01-01|\n",
+            "|653052|        875.0|      875.0|           Tailoring|      Services|To buy a sewing m...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 06:25:41|2013-12-17 08:00:00|2014-01-01 18:07:34|            11|          25|                NULL|female, female, f...|         irregular|2014-01-01|\n",
+            "|653066|        250.0|      250.0|              Sewing|      Services|to purchase a sew...|          IN|   India|   Maynaguri|     INR|     334.0|2014-01-01 09:48:35|2013-12-13 08:00:00|2014-01-01 17:18:09|            43|           4|user_favorite, us...|              female|            bullet|2014-01-01|\n",
+            "|653080|        475.0|      475.0|        Beauty Salon|      Services|to buy more cosme...|          PK|Pakistan|      Lahore|     PKR|     245.0|2014-01-01 11:48:08|2013-12-19 08:00:00|2014-01-10 03:22:29|            14|          18|    #Woman Owned Biz|              female|           monthly|2014-01-01|\n",
+            "|653065|        250.0|      250.0|              Bakery|          Food|to buy ingredient...|          PK|Pakistan|      Lahore|     PKR|     247.0|2014-01-01 08:26:34|2013-12-18 08:00:00|2014-01-01 15:35:59|            11|          10|                NULL|              female|         irregular|2014-01-01|\n",
+            "+------+-------------+-----------+--------------------+--------------+--------------------+------------+--------+------------+--------+----------+-------------------+-------------------+-------------------+--------------+------------+--------------------+--------------------+------------------+----------+\n",
+            "only showing top 20 rows\n",
+            "\n"
+          ]
+        }
+      ],
+      "source": [
+        "# No olvides los imports que necesites...\n",
+        "# LÍNEAS EVALUABLES, NO RENOMBRAR LAS VARIABLES\n",
+        "kivaDF = None\n",
+        "# YOUR CODE HERE\n",
+        "from pyspark.sql import functions as F\n",
+        "from pyspark.sql.types import IntegerType\n",
+        "kivaDF = kivaRawNoNullDF.withColumn(\"posted_time\", F.from_unixtime(F.unix_timestamp('posted_time', 'yyyy-MM-dd HH:mm:ssXXX')).cast(\"timestamp\")) \\\n",
+        "    .withColumn(\"disbursed_time\", F.from_unixtime(F.unix_timestamp('disbursed_time', 'yyyy-MM-dd HH:mm:ssXXX')).cast(\"timestamp\")) \\\n",
+        "    .withColumn(\"funded_time\", F.from_unixtime(F.unix_timestamp('funded_time', 'yyyy-MM-dd HH:mm:ssXXX')).cast(\"timestamp\")) \\\n",
+        "    .withColumn(\"loan_amount\", F.col(\"loan_amount\").cast(DoubleType())) \\\n",
+        "    .withColumn(\"term_in_months\", F.col(\"term_in_months\").cast(IntegerType()))\n",
+        "\n",
+        "kivaDF.cache()\n",
+        "kivaDF.show()"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 25,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "4a659b870cc3a2b7d239dd7bbdd54eea",
+          "grade": true,
+          "grade_id": "convert_timestamp_tests",
+          "locked": true,
+          "points": 1,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "VkmPug0ymVnP"
+      },
+      "outputs": [],
+      "source": [
+        "from pyspark.sql import functions as F\n",
+        "typesDict = dict(kivaDF.dtypes)\n",
+        "assert(typesDict[\"posted_time\"] == \"timestamp\")\n",
+        "assert(typesDict[\"disbursed_time\"] == \"timestamp\")\n",
+        "assert(typesDict[\"loan_amount\"] == \"double\")\n",
+        "assert(typesDict[\"term_in_months\"] == \"int\")\n",
+        "cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))\n",
+        "nullsRow = kivaDF.select(cnt_cond(F.col(\"posted_time\").isNull()).alias(\"posted_nulls\"),\n",
+        "              cnt_cond(F.col(\"disbursed_time\").isNull()).alias(\"disbursed_nulls\")).head()\n",
+        "assert(nullsRow.posted_nulls == 0)\n",
+        "assert(nullsRow.disbursed_nulls == 0)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "1e93f385f93838abff6492567725cfba",
+          "grade": false,
+          "grade_id": "cell-fc88821f19453a51",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "v0M1I6gLmVnP"
+      },
+      "source": [
+        "**(2 puntos)** Ejercicio 3\n",
+        "\n",
+        "Partiendo de `kivaDF`:\n",
+        "\n",
+        "* Primero, añade una nueva columna `dias_desembolso` que contenga el número de días que han pasado entre la fecha en que los prestamistas aceptaron financiar un proyecto, y la fecha en que el agente de campo entregó los fondos al beneficiario. Para ello, utiliza `withColumn` en combinación con la función `F.datediff(\"colFuturo\", \"colPasado\")`\n",
+        "* De manera análoga, añade otra nueva columna `dias_aceptacion` que contenga el número de días entre el anuncio de la necesidad de préstamo y la aceptación de financiarlo por parte de algún prestamista.\n",
+        "* Reemplazar la columna `sector` por otra en la que se hayan traducido las categorías \"Education\" por \"Educacion\" (sin tilde para evitar posibles problemas) y \"Agriculture\" por \"Agricultura\", dejando como están el resto de categorías. **La sustitución no debe tener más que tres casos**: uno para cada categoría que vamos a reemplazar, y un tercero para el resto de categorías, que deben quedarse como estaban.\n",
+        "* El resultado debe quedar guardado en la variable `kivaTiemposDF`."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 26,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "5ca4098e1a7f6a6f74ba37e09dc7fafe",
+          "grade": false,
+          "grade_id": "aniade_tiempos",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "5uZLpFhEmVnQ"
+      },
+      "outputs": [],
+      "source": [
+        "# LÍNEA EVALUABLE, NO RENOMBRAR VARIABLES\n",
+        "# imports......\n",
+        "kivaTiemposDF = None\n",
+        "# YOUR CODE HERE\n",
+        "kivaTiemposDF = kivaDF.withColumn(\"dias_desembolso\", F.datediff(\"disbursed_time\", \"funded_time\")) \\\n",
+        "    .withColumn(\"dias_aceptacion\", F.datediff(\"funded_time\", \"posted_time\")) \\\n",
+        "    .withColumn(\"sector\",\n",
+        "                F.when(F.col(\"sector\") == \"Education\", \"Educacion\")\n",
+        "                .when(F.col(\"sector\") == \"Agriculture\", \"Agricultura\")\n",
+        "                .otherwise(F.col(\"sector\")))"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 27,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "dcadcc48648f84d47868016a5a1b2176",
+          "grade": true,
+          "grade_id": "aniade_tiempos_test",
+          "locked": true,
+          "points": 2,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "kqLeA2ZnmVnQ"
+      },
+      "outputs": [],
+      "source": [
+        "assert(kivaTiemposDF.where(\"sector == 'Agricultura'\").count() == 157003)\n",
+        "assert(kivaTiemposDF.where(\"sector == 'Educacion'\").count() == 28417)\n",
+        "# Comprobamos que las 13 restantes se mantienen sin cambios\n",
+        "assert(kivaTiemposDF.groupBy(\"sector\").count().join(kivaDF.groupBy(\"sector\").count(), [\"sector\", \"count\"]).count() == 13)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "79185ceef173a0104b5f923e4bde05a0",
+          "grade": false,
+          "grade_id": "cell-a71a6b17b1e0d613",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "nc_YYOi5mVnQ"
+      },
+      "source": [
+        "**(3 puntos)** Ejercicio 4\n",
+        "\n",
+        "Partiendo de `kivaTiemposDF`, crear un nuevo DataFrame llamado `kivaAgrupadoDF` que tenga:\n",
+        "\n",
+        "* Tantas filas como **países (`country`; no usar el código de país)**, y tantas columnas como **sectores** (cada una llamada como el sector) más una (la columna del país, que debe aparecer en primer lugar). En cada celda deberá ir el número **medio (redondeado a 2 cifras decimales)** de días transcurridos en ese país y sector *entre la fecha en que se anuncia la necesidad de préstamo y la fecha en la que un prestamista acepta financiarlo*. Esta columna ha sido calculada en la celda precedente.\n",
+        "* Después de esto, añadir una columna adicional `transcurrido_global` con el número **medio (redondeado a 2 cifras decimales) de días transcurridos en cada país** entre ambas fechas *sin tener en cuenta el sector*. Cada fila tendrá la media de las 15 columnas del apartado anterior.\n",
+        "* Por último, ordenar el DF resultante **descendentemente** en base al tiempo medio global, `transcurrido_global`. El DF resultado de la ordenación debe ser almacenado en la variable `kivaAgrupadoDF`.\n",
+        "\n",
+        "PISTA: utiliza el método `pivot` con el sector para el primer apartado, envolviendo a la función de agregación con la función `F.round`, es decir, `F.round(F.funcionAgregacion(....), 2)`, y `withColumn` con una operación aritmética entre columnas en el segundo. **No debe utilizarse la función `when`** ya que Spark es capaz de hacer directamente aritmética entre objetos columna. La operación aritmética también debe estar envuelta por round: `F.round(op. aritmética entre objetos columna, 2)`."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 28,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "396a2289c6c4fa8c5de5540783d27942",
+          "grade": false,
+          "grade_id": "tiempos_medios",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "r3Ns_grDmVnQ",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "649991cd-e51c-4c61-9533-42a830911c34"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "+-------------+-----------+-----+--------+------------+---------+-------------+-----+------+-------+-------------+------------+------+--------+--------------+---------+-------------------+\n",
+            "|      country|Agricultura| Arts|Clothing|Construction|Educacion|Entertainment| Food|Health|Housing|Manufacturing|Personal Use|Retail|Services|Transportation|Wholesale|transcurrido_global|\n",
+            "+-------------+-----------+-----+--------+------------+---------+-------------+-----+------+-------+-------------+------------+------+--------+--------------+---------+-------------------+\n",
+            "|United States|      12.17| 16.8|   19.26|       14.77|    15.33|        23.94|17.81| 18.32|  27.64|        20.93|       36.53| 23.21|   21.73|         19.71|     27.5|              21.04|\n",
+            "|      Bolivia|      20.38|11.45|   24.61|       22.29|    13.66|         13.7|23.54| 15.95|  26.45|         12.7|       25.29| 24.27|   23.16|         23.53|    19.33|              20.02|\n",
+            "|      Armenia|      23.44|10.84|   27.76|       18.35|    10.76|        14.38|22.57| 18.64|  26.96|        11.51|       21.11| 25.98|   20.94|         25.33|    20.14|              19.91|\n",
+            "|     Colombia|      20.43| 8.42|   23.76|        19.5|      6.3|        12.97|21.51| 11.09|  24.49|        10.01|        25.3| 24.69|    19.6|         26.06|    14.92|              17.94|\n",
+            "|   Tajikistan|      20.87| 6.69|   24.12|       19.01|    11.79|        21.22|21.35| 10.06|  24.21|          8.8|       23.69| 25.08|   14.87|          26.7|     10.5|              17.93|\n",
+            "|     Honduras|      20.05|10.34|   22.65|       20.55|    15.94|          9.0|20.57|  9.61|   25.2|        13.76|       11.55| 23.57|   16.92|         21.16|     26.5|              17.82|\n",
+            "|  El Salvador|      19.43| 7.52|   20.91|       14.09|    10.89|        10.54|17.56| 10.74|   26.5|         8.67|       27.38| 21.83|   17.84|         25.39|     24.0|              17.55|\n",
+            "|      Albania|      17.28|10.25|   22.62|       17.92|    10.27|          9.5|21.87| 11.44|  21.97|        13.25|        20.5| 23.65|   21.13|         22.63|     16.0|              17.35|\n",
+            "|      Lebanon|      15.38| 8.03|    20.6|        19.6|     9.75|        12.64|18.03| 14.12|  21.15|        10.54|       19.37| 21.35|   17.85|         20.38|     26.0|              16.99|\n",
+            "|    Nicaragua|      18.03|10.21|   18.85|        23.9|    10.99|         12.0| 17.1| 10.74|   25.6|        12.54|       18.57|  20.9|   16.87|         20.87|     9.13|              16.42|\n",
+            "|    Guatemala|      12.88| 8.99|   20.17|       16.85|     6.58|         14.0|17.96| 10.98|  19.82|         9.82|       18.87| 21.09|   16.42|          18.6|     20.5|              15.57|\n",
+            "|     Pakistan|      16.37| 8.93|   22.65|       16.71|     8.86|        10.26|19.19|  9.07|   12.6|         9.05|       15.44| 23.05|   19.73|         22.69|    13.03|              15.18|\n",
+            "|   Costa Rica|      16.56|10.85|   19.98|       15.05|     4.36|         11.0|17.22|  18.0|  18.96|        10.94|        16.0| 20.44|   16.45|         16.78|     15.0|              15.17|\n",
+            "|    Palestine|      12.62| 9.17|   19.11|       17.31|     11.9|        14.05| 17.9|  5.04|  17.61|        10.01|       16.18| 18.48|   14.72|         18.07|    16.03|              14.55|\n",
+            "| Sierra Leone|        8.0| 4.63|   17.47|       15.78|     9.02|         14.0|14.49|  7.24|  18.79|         6.81|       28.06| 15.56|    16.2|         17.11|     18.0|              14.08|\n",
+            "|     Paraguay|       13.1| 6.96|    8.91|       14.25|     9.29|          3.0| 9.18|  6.49|  21.33|          9.4|        19.0| 12.76|   10.42|         29.17|     30.0|              13.55|\n",
+            "|      Vietnam|      21.07| 5.22|   17.54|       14.26|     6.04|         14.5|19.42|  9.57|   10.7|          7.7|         7.4| 15.91|   13.77|         16.85|     11.0|              12.73|\n",
+            "|       Uganda|      15.08| 7.91|   13.68|       15.02|     6.36|        10.19|14.15|  6.36|  20.36|         7.65|        6.29|  17.4|   13.38|          19.1|    14.64|               12.5|\n",
+            "|         Peru|      13.77| 7.87|   11.99|       13.53|     11.0|         7.97|10.88|  8.37|  24.33|         8.35|        16.6| 11.16|   11.29|         15.97|    13.57|              12.44|\n",
+            "|       Mexico|       8.92| 10.2|   11.15|       18.77|      8.5|          8.5| 9.99| 15.12|  16.05|         8.58|        8.06|  11.4|   11.31|         13.15|     17.0|              11.78|\n",
+            "+-------------+-----------+-----+--------+------------+---------+-------------+-----+------+-------+-------------+------------+------+--------+--------------+---------+-------------------+\n",
+            "only showing top 20 rows\n",
+            "\n"
+          ]
+        }
+      ],
+      "source": [
+        "# LÍNEA EVALUABLE, NO RENOMBRAR VARIABLES\n",
+        "kivaAgrupadoDF = None\n",
+        "# YOUR CODE HERE\n",
+        "kivaAgrupadoDF = kivaTiemposDF.groupBy(\"country\").pivot(\"sector\").agg(F.round(F.mean(\"dias_aceptacion\"), 2))\n",
+        "\n",
+        "# Calculate global average and add as a new column\n",
+        "sector_cols = [col for col in kivaAgrupadoDF.columns if col != 'country']\n",
+        "kivaAgrupadoDF = kivaAgrupadoDF.withColumn(\"transcurrido_global\", F.round(sum(kivaAgrupadoDF[col] for col in sector_cols) / len(sector_cols), 2)).orderBy(F.desc(F.col(\"transcurrido_global\")))\n",
+        "kivaAgrupadoDF.show()"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 29,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "93ebd38f5b390fbfbd89be06a50c6282",
+          "grade": true,
+          "grade_id": "tiempos_medios_test",
+          "locked": true,
+          "points": 3,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "1z8tnWpWmVnQ"
+      },
+      "outputs": [],
+      "source": [
+        "r1 = kivaAgrupadoDF.head()\n",
+        "assert(r1.country == \"United States\")\n",
+        "assert((r1.Agricultura - 12.0 < 0.01) | (r1.Agricultura - 12.17 < 0.01))\n",
+        "assert((r1.Educacion - 15.21 < 0.01) | (r1.Educacion - 15.33 < 0.01))\n",
+        "assert(r1.Wholesale - 27.5 < 0.01)\n",
+        "assert((r1.transcurrido_global - 20.94 < 0.01) | (r1.transcurrido_global - 21.04 < 0.01))"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "markdown",
+          "checksum": "31924076e8ce9e4467959d6eef2edcc4",
+          "grade": false,
+          "grade_id": "cell-c5ec05706eccd480",
+          "locked": true,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "RlzIFPMCmVnQ"
+      },
+      "source": [
+        "**(3 puntos)** Ejercicio 5\n",
+        "\n",
+        "Partiendo de nuevo de `kivaTiemposDF`, añadir las siguientes columnas:\n",
+        "\n",
+        "* Primero, tres columnas adicionales llamadas `transc_medio`, `transc_min`, `transc_max` que contengan, respectivamente, **el número de días medio, mínimo y máximo transcurrido para proyectos de ese mismo país y ese mismo sector** entre la fecha en que se postea la necesidad de préstamo y la fecha en la que alguien acepta financiarlo (es decir, la columna `dias_aceptacion` calculada antes y utilizada también en la celda anterior). Es decir, queremos una columna extra para que podamos tener, junto a cada préstamo, información agregada de los préstamos similares, entendidos como aquellos del mismo país y del mismo sector. **No se debe utilizar JOIN sino solo funciones de ventana**.\n",
+        "* Finalmente, crear otra columna adicional `diff_dias` que contenga la **diferencia en días entre los días que transcurrieron en este proyecto y la media de días de los proyectos similares** (calculada en el apartado anterior). Debería ser lo primero menos lo segundo, de forma que un número positivo indica que este préstamo tardó más días en ser aceptado que la media de días de este país y sector, y un número negativo indica lo contrario. El resultado debe obtenerse aplicando operaciones aritméticas con columnas existentes, **sin utilizar `when`**.\n",
+        "* El DF resultante con las 4 columnas nuevas que hemos añadido debe quedar almacenado en la variable `kivaExtraInfoDF`."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 30,
+      "metadata": {
+        "deletable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "7781e45de12eaece0b66e4eb898e2b0b",
+          "grade": false,
+          "grade_id": "ventana",
+          "locked": false,
+          "schema_version": 3,
+          "solution": true,
+          "task": false
+        },
+        "id": "VAe0jzgsmVnQ",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "7774e963-b3cc-4327-f257-2578b0a40a85"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "+-------+-------------+-----------+--------------------+------+--------------------+------------+-----------+-------------+--------+----------+-------------------+-------------------+-------------------+--------------+------------+--------------------+----------------+------------------+----------+---------------+---------------+------------------+----------+----------+-------------------+\n",
+            "|     id|funded_amount|loan_amount|            activity|sector|                 use|country_code|    country|       region|currency|partner_id|        posted_time|     disbursed_time|        funded_time|term_in_months|lender_count|                tags|borrower_genders|repayment_interval|      date|dias_desembolso|dias_aceptacion|      transc_medio|transc_min|transc_max|          diff_dias|\n",
+            "+-------+-------------+-----------+--------------------+------+--------------------+------------+-----------+-------------+--------+----------+-------------------+-------------------+-------------------+--------------+------------+--------------------+----------------+------------------+----------+---------------+---------------+------------------+----------+----------+-------------------+\n",
+            "| 805613|       6000.0|     6000.0|            Textiles|  Arts|To buy 9 sewing m...|          AF|Afghanistan|Kandahar City|     USD|     412.0|2014-11-26 00:51:29|2015-01-07 08:00:00|2014-11-26 20:07:08|             8|         204|user_favorite, us...|          female|            bullet|2014-11-26|             42|              0|               0.5|         0|         1|               -0.5|\n",
+            "|1023542|       8000.0|     8000.0|            Textiles|  Arts|To purchase raw m...|          AF|Afghanistan|Kandahar City|     USD|     412.0|2016-02-16 15:15:51|2016-04-05 07:00:00|2016-02-17 05:25:42|             6|         308|#Fabrics, user_fa...|          female|            bullet|2016-02-16|             48|              1|               0.5|         0|         1|                0.5|\n",
+            "| 662240|       1475.0|     1475.0|                Cafe|  Food|to buy equipment ...|          AL|    Albania|      Elbasan|     ALL|     239.0|2014-01-27 10:26:03|2014-01-24 08:00:00|2014-01-29 17:01:30|            26|          55|volunteer_like, #...|          female|           monthly|2014-01-27|             -5|              2|21.865384615384617|         2|        44|-19.865384615384617|\n",
+            "| 666820|       2900.0|     2900.0|              Bakery|  Food|to build an addit...|          AL|    Albania|        Korce|     ALL|     239.0|2014-02-07 11:32:56|2014-02-05 08:00:00|2014-02-17 17:57:30|            26|         112|user_favorite, us...|          female|           monthly|2014-02-07|            -12|             10|21.865384615384617|         2|        44|-11.865384615384617|\n",
+            "| 674498|       1975.0|     1975.0|       Grocery Store|  Food|to add to her gro...|          AL|    Albania|        Korce|     ALL|     239.0|2014-02-21 11:32:34|2014-02-17 08:00:00|2014-02-26 19:21:25|            32|          74|                NULL|          female|           monthly|2014-02-21|             -9|              5|21.865384615384617|         2|        44|-16.865384615384617|\n",
+            "| 702586|       1000.0|     1000.0|         Food Market|  Food|to buy kitchen su...|          AL|    Albania|        Lezhe|     ALL|     239.0|2014-04-25 11:17:25|2014-04-24 07:00:00|2014-05-17 22:32:13|            20|          36|volunteer_pick, v...|          female|           monthly|2014-04-25|            -23|             22|21.865384615384617|         2|        44|0.13461538461538325|\n",
+            "| 706185|       1500.0|     1500.0|       Grocery Store|  Food|to buy shelves an...|          AL|    Albania|        Korce|     ALL|     239.0|2014-05-06 10:41:36|2014-04-30 07:00:00|2014-05-15 23:45:17|            21|          47|#Interesting Phot...|          female|           monthly|2014-05-06|            -15|              9|21.865384615384617|         2|        44|-12.865384615384617|\n",
+            "| 709239|       1000.0|     1000.0|       Grocery Store|  Food|to buy inventory ...|          AL|    Albania|        Korce|     ALL|     239.0|2014-05-13 08:34:54|2014-05-08 07:00:00|2014-05-19 19:17:41|            26|          36|                NULL|          female|           monthly|2014-05-13|            -11|              6|21.865384615384617|         2|        44|-15.865384615384617|\n",
+            "| 715980|       2450.0|     2450.0|       Grocery Store|  Food|to finish the gro...|          AL|    Albania|        Korce|     ALL|     239.0|2014-05-26 09:55:30|2014-05-20 07:00:00|2014-06-28 17:55:15|            20|          92|#Parent, #Biz Dur...|            male|           monthly|2014-05-26|            -39|             33|21.865384615384617|         2|        44| 11.134615384615383|\n",
+            "| 719122|       1475.0|     1475.0|       Grocery Store|  Food| who was born dea...|          AL|    Albania|        Korce|     ALL|     239.0|2014-06-02 09:38:17|2014-05-29 07:00:00|2014-06-10 14:06:36|            20|          52|user_favorite, #P...|          female|           monthly|2014-06-02|            -12|              8|21.865384615384617|         2|        44|-13.865384615384617|\n",
+            "| 726842|        975.0|      975.0| Fruits & Vegetables|  Food|to stock up on in...|          AL|    Albania|        Lezhe|     ALL|     239.0|2014-06-18 11:39:29|2014-06-13 07:00:00|2014-07-01 18:17:43|            22|          35|#Elderly, #Parent...|          female|           monthly|2014-06-18|            -18|             13|21.865384615384617|         2|        44| -8.865384615384617|\n",
+            "| 754354|       1925.0|     1925.0|Food Production/S...|  Food|to buy more inven...|          AL|    Albania|        Lezhe|     ALL|     239.0|2014-08-14 10:43:33|2014-08-11 07:00:00|2014-09-21 14:13:41|            38|          67|#Parent, #Woman O...|          female|           monthly|2014-08-14|            -41|             38|21.865384615384617|         2|        44| 16.134615384615383|\n",
+            "| 773540|        925.0|      925.0|             Fishing|  Food|to buy nets, a bo...|          AL|    Albania|        Lezhe|     ALL|     239.0|2014-09-23 12:12:49|2014-09-12 07:00:00|2014-09-30 02:46:44|            20|          33|       user_favorite|            male|           monthly|2014-09-23|            -18|              7|21.865384615384617|         2|        44|-14.865384615384617|\n",
+            "| 776961|        475.0|      475.0|             Fishing|  Food|to repair her exi...|          AL|    Albania|        Lezhe|     ALL|     239.0|2014-09-30 10:55:52|2014-09-26 07:00:00|2014-10-05 19:18:03|            13|          10|user_favorite, us...|          female|           monthly|2014-09-30|             -9|              5|21.865384615384617|         2|        44|-16.865384615384617|\n",
+            "| 802838|        450.0|      450.0|                 Pub|  Food|to stock up on in...|          AL|    Albania|        Korce|     ALL|     239.0|2014-11-21 10:49:06|2014-11-18 08:00:00|2014-11-28 01:11:37|            12|           9|volunteer_pick, v...|            male|           monthly|2014-11-21|            -10|              7|21.865384615384617|         2|        44|-14.865384615384617|\n",
+            "| 802823|       2525.0|     2525.0|       Grocery Store|  Food|to stock up on in...|          AL|    Albania|        Lezhe|     ALL|     239.0|2014-11-21 10:22:31|2014-11-17 08:00:00|2014-12-29 15:11:29|            32|          81|              #Trees|            male|           monthly|2014-11-21|            -42|             38|21.865384615384617|         2|        44| 16.134615384615383|\n",
+            "| 802877|       2250.0|     2250.0| Fruits & Vegetables|  Food|to repair the tra...|          AL|    Albania|        Korce|     ALL|     239.0|2014-11-21 11:59:15|2014-11-14 08:00:00|2014-12-29 16:39:33|            26|          80|user_favorite, #S...|            male|           monthly|2014-11-21|            -45|             38|21.865384615384617|         2|        44| 16.134615384615383|\n",
+            "| 803011|       1350.0|     1350.0|          Food Stall|  Food|to add some more ...|          AL|    Albania|      Elbasan|     ALL|     239.0|2014-11-21 14:47:40|2014-11-19 08:00:00|2014-12-21 10:42:47|            26|          48|#Elderly, #Parent...|          female|           monthly|2014-11-21|            -32|             30|21.865384615384617|         2|        44|  8.134615384615383|\n",
+            "| 804218|        900.0|      900.0| Fruits & Vegetables|  Food|to start up a lit...|          AL|    Albania|        Lezhe|     ALL|     239.0|2014-11-24 09:46:40|2014-11-20 08:00:00|2014-12-22 01:52:00|            26|          35|user_favorite, us...|            male|           monthly|2014-11-24|            -32|             28|21.865384615384617|         2|        44|  6.134615384615383|\n",
+            "| 806209|        900.0|      900.0|          Restaurant|  Food|to finish the bar...|          AL|    Albania|        Korce|     ALL|     239.0|2014-11-26 13:18:00|2014-11-13 08:00:00|2014-12-22 22:23:48|            14|          34|#Parent, user_fav...|            male|           monthly|2014-11-26|            -39|             26|21.865384615384617|         2|        44|  4.134615384615383|\n",
+            "+-------+-------------+-----------+--------------------+------+--------------------+------------+-----------+-------------+--------+----------+-------------------+-------------------+-------------------+--------------+------------+--------------------+----------------+------------------+----------+---------------+---------------+------------------+----------+----------+-------------------+\n",
+            "only showing top 20 rows\n",
+            "\n"
+          ]
+        }
+      ],
+      "source": [
+        "# LÍNEA EVALUABLE, NO RENOMBRAR VARIABLES\n",
+        "# imports necesarios..........\n",
+        "windowPaisSector = None\n",
+        "kivaExtraInfoDF = None\n",
+        "# YOUR CODE HERE\n",
+        "from pyspark.sql.window import Window\n",
+        "windowPaisSector = Window.partitionBy(\"country\", \"sector\")\n",
+        "\n",
+        "kivaExtraInfoDF = kivaTiemposDF.withColumn(\"transc_medio\", F.mean(\"dias_aceptacion\").over(windowPaisSector)) \\\n",
+        "    .withColumn(\"transc_min\", F.min(\"dias_aceptacion\").over(windowPaisSector)) \\\n",
+        "    .withColumn(\"transc_max\", F.max(\"dias_aceptacion\").over(windowPaisSector)) \\\n",
+        "    .withColumn(\"diff_dias\", F.col(\"dias_aceptacion\") - F.col(\"transc_medio\"))\n",
+        "kivaExtraInfoDF.show()"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 31,
+      "metadata": {
+        "deletable": false,
+        "editable": false,
+        "nbgrader": {
+          "cell_type": "code",
+          "checksum": "844f128aa6e789cd3660a00ab0159b56",
+          "grade": true,
+          "grade_id": "ventana_test",
+          "locked": true,
+          "points": 3,
+          "schema_version": 3,
+          "solution": false,
+          "task": false
+        },
+        "id": "tPLATFAMmVnQ"
+      },
+      "outputs": [],
+      "source": [
+        "r = kivaExtraInfoDF.where(\"id = '658540'\").head()\n",
+        "assert(r.country == 'Burkina Faso')\n",
+        "assert(r.transc_medio - 11.02 < 0.05)\n",
+        "assert(r.dias_aceptacion == 35)\n",
+        "assert(r.diff_dias - 24.0 < 0.001)"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3 (ipykernel)",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.8.16"
+    },
+    "colab": {
+      "provenance": [],
+      "include_colab_link": true
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
